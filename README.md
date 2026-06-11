@@ -447,3 +447,31 @@ object Speed extends RefinedType[Double, Positive]
 def setTemp(t: Temperature): Unit = ???
 setTemp(Speed(100)) // ❌ Won't compile — distinct types
 ```
+
+```sh
+Level 0: inline vals/defs
+│  Constant folding, dead branch elimination
+│  Tools: inline, @inline, transparent inline
+│
+Level 1: compiletime utilities
+│  Type-level computation, conditional summoning
+│  Tools: constValue, summonInline, erasedValue, S[N] (Peano arithmetic)
+│
+Level 2: Quotes / Splices  (scala.quoted.Quotes)
+│  Typed AST manipulation, code generation
+│  Tools: '{}, ${}, Expr[T], Type[T], Varargs, Expr.ofList
+│
+Level 3: quotes.reflect  (TASTy API)
+│  Full AST inspection: Terms, Types, Symbols, Flags
+│  Tools: TypeRepr, Symbol, DefDef, ValDef, ClassDef, report
+│
+Level 4: Mirror + derives
+│  Structural type information for generic programming
+│  Tools: Mirror.ProductOf, Mirror.SumOf, MirroredElemLabels
+│
+Level 5: MacroAnnotation (experimental)
+   Definition transformation — add/rewrite classes and defs
+   Tools: MacroAnnotation, Symbol.newClass, Symbol.newMethod
+```
+
+Metaprogramming is writing code that treats other code as data — programs that read, generate, analyze, or transform programs.

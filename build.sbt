@@ -1,11 +1,11 @@
 import Dependencies._
 
-ThisBuild / scalaVersion := "3.8.2"
+ThisBuild / scalaVersion := "3.8.4"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "Scala3-Macros-Metaprogramming",
+    name := "Scala3-Metaprogramming",
     libraryDependencies += munit % Test
   )
 

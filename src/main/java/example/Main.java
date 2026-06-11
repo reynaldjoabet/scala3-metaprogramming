@@ -3,36 +3,25 @@ package example;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Main{
+public class Main {
 
-    int age= 10;
-    String name="my name";
-    double price=4.13;
-    float pi=3.17f;
+  int age = 10;
+  String name = "my name";
+  double price = 4.13;
+  float pi = 3.17f;
 
-    long distance=90;
-    byte mybyte=120;
-    List<Byte> myBytes= new ArrayList();
+  long distance = 90;
+  byte mybyte = 120;
+  List<Byte> myBytes = new ArrayList<Byte>();
 
-
-  char grade='B';
+  char grade = 'B';
 
   public static void main(String args[]) {
-    Student student= new Student("Paul",34);
-    
-    Student stu= new Student();
 
-   student.setName("Peter");
+    //statistically typed
+    ///dynamically typed
 
-   stu.setName("Luke");
-   stu.setAge(24);
-
-    System.out.println("my name is" + student.getName());
   }
-
-  //statistically typed
-  ///dynamically typed
-  
 }
 
 //Local primitive variables live in stack memory. 
