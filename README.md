@@ -475,3 +475,47 @@ Level 5: MacroAnnotation (experimental)
 ```
 
 Metaprogramming is writing code that treats other code as data — programs that read, generate, analyze, or transform programs.
+
+## Worked examples
+
+Each example lives in its own package under [src/main/scala/](src/main/scala/),
+as a pair of files: the API (`Foo.scala`) and the implementation
+(`FooMacros.scala`). They have to be separate — *a macro cannot be used in the
+file that defines it*. Every one of them is exercised by a spec under
+[src/test/scala/](src/test/scala/), including
+[NegativeSpec.scala](src/test/scala/NegativeSpec.scala), which asserts on the
+compile errors they produce.
+
+| Example | Package | What it demonstrates | Level |
+| --- | --- | --- | --- |
+| **Optics** — `Lens.of[Person](_.address.city)` | [example.optics](src/main/scala/optics/) | Reading a *lambda's* tree: unwrap `Inlined`/`Closure`, walk the `Select` chain, synthesise nested `copy(...)` calls with `Apply`/`TypeApply` | 3 |
+| **Compile-time DI** — `Wiring.wire[UserService]` | [example.wiring](src/main/scala/wiring/) | `Implicits.search` (the compiler's own resolution, run from a macro), constructor signatures via the `MethodType` chain, `New`/`Apply`, cycle detection, errors that name the wiring path | 3 |
+| **Checked SQL** — `sql"... where id = $id"`, `Table.insertInto[T]` | [example.sql](src/main/scala/sql/) | Destructuring a `StringContext` with a quoted pattern, recovering an argument's static type after `Any*` widening, `Expr.summon` for type classes, compile-time lint, constant folding the whole statement | 2 |
+| **Staged JSON encoder** — `JsonWriter.derive[A]` | [example.json](src/main/scala/json/) | Recursive *code generation* driven by type shape, quoted type patterns (`case '[Option[t]]`), reflective `Match` over sealed hierarchies, straight-line appends with no boxing and no intermediate collections | 2 + 3 |
+| **Validated literals** — `uuid"..."`, `re"..."` | [example.literals](src/main/scala/literals/) | Parsing at compile time, and `Position(sourceFile, start, end)` to put the caret on the exact character *inside* a string literal that failed to parse | 3 |
+| **Compile-time config** — `ServerConfig.parse("""{...}""")` | [example.config](src/main/scala/config/) | Running a real library (ujson) during compilation, validating *data* the way the compiler validates types, then `ToExpr` to lift the result back into a constructor call | 2 |
+| **Staging / partial evaluation** — `Arith.compile(...)` | [example.staging](src/main/scala/staging/) | `FromExpr` (unlifting) and `ToExpr` (lifting) for a user type, generating N `val` bindings by recursing with nested quotes, unrolling a loop whose trip count is a compile-time constant | 2 |
+| **Call-site metadata** — `SourceLoc.here`, `Trace.trace(x)` | [example.sourceloc](src/main/scala/sourceloc/) | `Position.ofMacroExpansion`, `Position.sourceCode` (the text the user actually typed), the `Symbol.spliceOwner` chain, and the `(using q: Quotes)(x: q.reflect.Symbol)` signature style | 3 |
+
+### Two traps worth knowing
+
+**`Quotes` instances are path-dependent.** `Term`, `TypeRepr` and `Symbol` belong
+to *one* `Quotes`. Inside `'{ ... ${ ... } ... }` the splice runs under a *fresh*
+one, so reflection done in there does not typecheck against reflection done
+outside:
+
+```
+Found:    x$1.reflect.Symbol
+Required: contextual$4.reflect.Symbol
+```
+
+The fix is always the same: do the reflective work before the quote, reduce it
+to `Expr` values, and splice those in — `Expr` crosses the boundary freely.
+See the comment in
+[SourceLocMacros.scala](src/main/scala/sourceloc/SourceLocMacros.scala).
+
+**Bindings inside a quote can shadow the macro's own variables.** In
+`case Pow(base, _) => '{ val base = ${ generate(base, ...) }; ... }` the
+generated `val base` captures the pattern variable, and the compiler reports
+`Recursive value base needs type`. Name generated bindings so they cannot
+collide.

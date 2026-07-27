@@ -1,9 +1,10 @@
 import scala.language.strictEquality
 
 /** Currency represents one currency of the ISO_4217 currencies list
-  * @see [[https://en.wikipedia.org/wiki/ISO_4217]]
+  * @see
+  *   [[https://en.wikipedia.org/wiki/ISO_4217]]
   */
-enum Currency(val numericCode: String) derives CanEqual{
+enum Currency(val numericCode: String) derives CanEqual {
   case AED extends Currency("784")
   case AFN extends Currency("971")
   case ALL extends Currency("008")

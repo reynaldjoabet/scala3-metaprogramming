@@ -105,3 +105,12 @@ object Nullable {
     }
   }
 }
+
+type Elem[X] = X match {
+  case List[t]  => t
+  case Array[t] => t
+}
+
+val hello: Elem[List[Int]] = 78
+
+val arrInt: Elem[Array[Int]] = 90
