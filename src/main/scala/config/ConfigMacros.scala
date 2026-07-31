@@ -2,23 +2,24 @@ package example.config
 
 import scala.quoted.*
 
-/** Implementation of [[ServerConfig.parse]].
+/**
+  * Implementation of [[ServerConfig.parse]].
   *
   * Techniques on show:
-  *   - running a real library (ujson) at compile time, over a literal obtained
-  *     with `valueOrAbort`,
-  *   - domain validation in the macro, so invalid *data* fails the build the
-  *     same way invalid *types* do,
-  *   - `ToExpr` for a user-defined type: the validated value is lifted back
-  *     into a constructor call, which is what removes the runtime parse.
+  *   - running a real library (ujson) at compile time, over a literal obtained with `valueOrAbort`,
+  *   - domain validation in the macro, so invalid *data* fails the build the same way invalid
+  *     *types* do,
+  *   - `ToExpr` for a user-defined type: the validated value is lifted back into a constructor
+  *     call, which is what removes the runtime parse.
   */
 private[config] object ConfigMacros {
 
-  /** Lifting a case class is mechanical: build the `apply` call and lift each
-    * field. `Expr(...)` finds the stdlib `ToExpr` instances for `String`,
-    * `Int`, `Boolean` and `List`.
+  /**
+    * Lifting a case class is mechanical: build the `apply` call and lift each field. `Expr(...)`
+    * finds the stdlib `ToExpr` instances for `String`, `Int`, `Boolean` and `List`.
     */
   given serverConfigToExpr: ToExpr[ServerConfig] with {
+
     def apply(config: ServerConfig)(using Quotes): Expr[ServerConfig] =
       '{
         ServerConfig(
@@ -28,6 +29,7 @@ private[config] object ConfigMacros {
           ${ Expr(config.origins) }
         )
       }
+
   }
 
   private val KnownKeys = Set("host", "port", "tls", "origins")
@@ -48,7 +50,7 @@ private[config] object ConfigMacros {
 
     val fields = root match {
       case obj: ujson.Obj => obj.value
-      case other => fail(s"expected a JSON object, found ${kindOf(other)}")
+      case other          => fail(s"expected a JSON object, found ${kindOf(other)}")
     }
 
     // Typos are the most common configuration bug, and here they are fatal at
@@ -67,12 +69,11 @@ private[config] object ConfigMacros {
     val host = required("host") match {
       case s: ujson.Str if s.value.nonEmpty => s.value
       case _: ujson.Str                     => fail("`host` must not be empty")
-      case other => fail(s"`host` must be a string, found ${kindOf(other)}")
+      case other                            => fail(s"`host` must be a string, found ${kindOf(other)}")
     }
 
     val port = required("port") match {
-      case n: ujson.Num
-          if n.value.isWhole && n.value >= 1 && n.value <= 65535 =>
+      case n: ujson.Num if n.value.isWhole && n.value >= 1 && n.value <= 65535 =>
         n.value.toInt
       case n: ujson.Num =>
         fail(
@@ -83,7 +84,7 @@ private[config] object ConfigMacros {
 
     val tls = required("tls") match {
       case b: ujson.Bool => b.value
-      case other => fail(s"`tls` must be a boolean, found ${kindOf(other)}")
+      case other         => fail(s"`tls` must be a boolean, found ${kindOf(other)}")
     }
 
     val origins = fields.get("origins") match {
@@ -110,4 +111,5 @@ private[config] object ConfigMacros {
     case _: ujson.Obj  => "an object"
     case _             => "null"
   }
+
 }

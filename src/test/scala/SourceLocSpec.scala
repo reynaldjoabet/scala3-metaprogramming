@@ -7,7 +7,7 @@ class SourceLocSpec extends FunSuite {
   private def whereAmI(using loc: SourceLoc): SourceLoc = loc
 
   test("the given is resolved at each call site") {
-    val first = whereAmI
+    val first  = whereAmI
     val second = whereAmI
 
     assertEquals(first.file, "SourceLocSpec.scala")
@@ -25,8 +25,9 @@ class SourceLocSpec extends FunSuite {
     val x = 20
     // `x + 1` is the text the user typed, recovered with Position.sourceCode.
     // The two calls are on consecutive lines, so the expected line follows.
-    val here = summon[SourceLoc]
+    val here      = summon[SourceLoc]
     val described = Trace.describe(x + 1)
     assertEquals(described, s"SourceLocSpec.scala:${here.line + 1}: x + 1 = 21")
   }
+
 }

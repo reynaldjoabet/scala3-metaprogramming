@@ -2,17 +2,16 @@ package example.staging
 
 import scala.quoted.*
 
-/** Implementation of [[Arith]].
+/**
+  * Implementation of [[Arith]].
   *
   * Techniques on show:
-  *   - [[FromExpr]] (*unlifting*): turning a syntax tree back into the value it
-  *     denotes, so the macro can run ordinary Scala over it,
+  *   - [[FromExpr]] (*unlifting*): turning a syntax tree back into the value it denotes, so the
+  *     macro can run ordinary Scala over it,
   *   - [[ToExpr]] (*lifting*): turning a value back into a syntax tree,
-  *   - generating N bindings when N is only known at compile time, by recursing
-  *     with nested quotes instead of building `ValDef`s by hand -
-  *     `'{ val x = ...; ${ rest(using '{ x }) } }`,
-  *   - unrolling a loop whose trip count is a compile-time constant (binary
-  *     exponentiation).
+  *   - generating N bindings when N is only known at compile time, by recursing with nested quotes
+  *     instead of building `ValDef`s by hand - `'{ val x = ...; ${ rest(using '{ x }) } }`,
+  *   - unrolling a loop whose trip count is a compile-time constant (binary exponentiation).
   */
 private[staging] object ArithMacros {
 
@@ -20,17 +19,24 @@ private[staging] object ArithMacros {
   // Unlifting: Expr[Arith] => Arith
   // ---------------------------------------------------------------------------
 
-  /** Written as a plain recursive method rather than inside the `given` so the
-    * recursion is explicit instead of going back through implicit search.
+  /**
+    * Written as a plain recursive method rather than inside the `given` so the recursion is
+    * explicit instead of going back through implicit search.
     */
   private def unlift(expr: Expr[Arith])(using Quotes): Option[Arith] =
     expr match {
       case '{ Arith.Lit(${ Expr(value) }) } => Some(Arith.Lit(value))
       case '{ Arith.Var(${ Expr(name) }) }  => Some(Arith.Var(name))
       case '{ Arith.Add($l, $r) }           =>
-        for { a <- unlift(l); b <- unlift(r) } yield Arith.Add(a, b)
+        for {
+          a <- unlift(l)
+          b <- unlift(r)
+        } yield Arith.Add(a, b)
       case '{ Arith.Mul($l, $r) } =>
-        for { a <- unlift(l); b <- unlift(r) } yield Arith.Mul(a, b)
+        for {
+          a <- unlift(l)
+          b <- unlift(r)
+        } yield Arith.Mul(a, b)
       case '{ Arith.Pow($base, ${ Expr(exponent) }) } =>
         unlift(base).map(b => Arith.Pow(b, exponent))
       case _ => None
@@ -77,7 +83,7 @@ private[staging] object ArithMacros {
   )(using Quotes): Expr[Map[String, Double] => Double] = {
     val names = Arith.variables(optimized).toList.sorted
     '{ (env: Map[String, Double]) =>
-      ${ bindAll(names, '{ env }, Map.empty, optimized) }
+      ${ bindAll(names, 'env, Map.empty, optimized) }
     }
   }
 
@@ -90,12 +96,12 @@ private[staging] object ArithMacros {
       )
     }
 
-  /** Emit `val x = env("x")` once per variable, then the body.
+  /**
+    * Emit `val x = env("x")` once per variable, then the body.
     *
-    * The number of bindings is only known at expansion time, so the generator
-    * recurses, threading the freshly bound references into the environment it
-    * passes down. Each `'{ val binding = ...; ${ ... '{ binding } ... } }` adds
-    * one real `val` to the generated code.
+    * The number of bindings is only known at expansion time, so the generator recurses, threading
+    * the freshly bound references into the environment it passes down. Each
+    * `'{ val binding = ...; ${ ... '{ binding } ... } }` adds one real `val` to the generated code.
     */
   private def bindAll(
       remaining: List[String],
@@ -107,7 +113,7 @@ private[staging] object ArithMacros {
     case name :: rest =>
       '{
         val binding = $env(${ Expr(name) })
-        ${ bindAll(rest, env, bound + (name -> '{ binding }), body) }
+        ${ bindAll(rest, env, bound + (name -> 'binding), body) }
       }
   }
 
@@ -135,11 +141,13 @@ private[staging] object ArithMacros {
       // shadow the pattern variable, and `val base = base` is a cycle.)
       '{
         val b = ${ generate(base, bound) }
-        ${ power('{ b }, exponent) }
+        ${ power('b, exponent) }
       }
   }
 
-  /** `x^13` becomes 5 multiplications, decided at compile time. */
+  /**
+    * `x^13` becomes 5 multiplications, decided at compile time.
+    */
   private def power(base: Expr[Double], exponent: Int)(using
       Quotes
   ): Expr[Double] = {
@@ -153,4 +161,5 @@ private[staging] object ArithMacros {
       }
     } else { '{ $base * ${ power(base, exponent - 1) } } }
   }
+
 }

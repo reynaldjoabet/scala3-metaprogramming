@@ -2,6 +2,7 @@ import example.json.JsonWriter
 import munit.FunSuite
 
 object model {
+
   final case class Point(x: Int, y: Int)
   final case class Team(name: String, size: Int, active: Boolean, ratio: Double)
   final case class Profile(nickname: Option[String], tags: List[String])
@@ -9,20 +10,24 @@ object model {
   final case class Scores(byPlayer: Map[String, Int])
 
   enum Shape {
+
     case Circle(radius: Double)
     case Rect(width: Double, height: Double)
     case Empty
+
   }
 
   sealed trait Event
-  final case class Login(user: String) extends Event
+  final case class Login(user: String)   extends Event
   final case class Click(x: Int, y: Int) extends Event
 
   final case class Money(cents: Long)
   final case class Invoice(total: Money)
+
 }
 
 class JsonWriterSpec extends FunSuite {
+
   import model.*
 
   test("case class") {

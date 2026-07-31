@@ -6,9 +6,9 @@ final case class UserRow(userId: Int, userName: String, isActive: Boolean)
 class SqlSpec extends FunSuite {
 
   test("parameters become placeholders, values travel separately") {
-    val id = 7
+    val id     = 7
     val active = true
-    val q = sql"select name from users where id = $id and active = $active"
+    val q      = sql"select name from users where id = $id and active = $active"
 
     assertEquals(q.sql, "select name from users where id = ? and active = ?")
     assertEquals(q.params, List(SqlParam.I32(7), SqlParam.Bool(true)))
@@ -22,15 +22,15 @@ class SqlSpec extends FunSuite {
 
   test("Option encodes to NULL") {
     val nickname: Option[String] = None
-    val q = sql"update users set nickname = $nickname"
+    val q                        = sql"update users set nickname = $nickname"
     assertEquals(q.params, List(SqlParam.Absent))
   }
 
   test("fragments compose") {
     val minAge = 18
-    val where = sql"where age >= $minAge"
-    val name = "ada"
-    val q = sql"select * from users $where and name = $name order by id"
+    val where  = sql"where age >= $minAge"
+    val name   = "ada"
+    val q      = sql"select * from users $where and name = $name order by id"
 
     assertEquals(
       q.sql,

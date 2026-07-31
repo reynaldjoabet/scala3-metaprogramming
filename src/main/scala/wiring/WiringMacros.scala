@@ -2,16 +2,17 @@ package example.wiring
 
 import scala.quoted.*
 
-/** Implementation of [[Wiring]].
+/**
+  * Implementation of [[Wiring]].
   *
   * Techniques on show:
-  *   - `Implicits.search`: running the compiler's own implicit resolution from
-  *     inside a macro, against the *call site's* scope,
-  *   - reading a constructor's signature by walking the `MethodType` chain
-  *     (which also handles curried and `using` parameter lists),
+  *   - `Implicits.search`: running the compiler's own implicit resolution from inside a macro,
+  *     against the *call site's* scope,
+  *   - reading a constructor's signature by walking the `MethodType` chain (which also handles
+  *     curried and `using` parameter lists),
   *   - `New` / `Select` / `TypeApply` / `Apply` to synthesise `new C(...)`,
-  *   - carrying a resolution path so that failures blame the right dependency,
-  *     with cycle and depth detection.
+  *   - carrying a resolution path so that failures blame the right dependency, with cycle and depth
+  *     detection.
   */
 private[wiring] object WiringMacros {
 
@@ -32,8 +33,9 @@ private[wiring] object WiringMacros {
         s"$msg\n  wiring path: ${render(path)}"
       )
 
-    /** JDK and stdlib types are never auto-constructed: `new String()` is a
-      * legal but useless answer to "where does this `String` come from?".
+    /**
+      * JDK and stdlib types are never auto-constructed: `new String()` is a legal but useless
+      * answer to "where does this `String` come from?".
       */
     def isLibraryType(sym: Symbol): Boolean = {
       val name = sym.fullName
@@ -41,8 +43,9 @@ private[wiring] object WiringMacros {
       name.startsWith("scala.") || sym.isNoSymbol
     }
 
-    /** Flatten a (possibly curried) constructor signature, remembering which
-      * lists are `using` lists - those must come from implicit search only.
+    /**
+      * Flatten a (possibly curried) constructor signature, remembering which lists are `using`
+      * lists - those must come from implicit search only.
       */
     def paramLists(
         tpe: TypeRepr
@@ -137,4 +140,5 @@ private[wiring] object WiringMacros {
 
     tree.asExprOf[A]
   }
+
 }

@@ -2,27 +2,30 @@ package example.json
 
 import scala.quoted.*
 
-/** Implementation of [[JsonWriter.derive]].
+/**
+  * Implementation of [[JsonWriter.derive]].
   *
   * Techniques on show:
-  *   - a recursive code *generator* (not a recursive runtime function): the
-  *     shape of the type drives which quotes get stitched together,
-  *   - quoted type patterns (`case '[Option[t]] =>`) to destructure a
-  *     `TypeRepr` and bring `t` into scope as a real `Type`,
+  *   - a recursive code *generator* (not a recursive runtime function): the shape of the type
+  *     drives which quotes get stitched together,
+  *   - quoted type patterns (`case '[Option[t]] =>`) to destructure a `TypeRepr` and bring `t` into
+  *     scope as a real `Type`,
   *   - `Expr.summon` for user overrides, with the root type excluded so a
   *     `given w: JsonWriter[X] = JsonWriter.derive` cannot summon itself,
-  *   - `Select(value, field)` to read case class fields, and a reflective
-  *     `Match` over `TypeTest` patterns for sealed hierarchies,
-  *   - an explicit stack of enclosing types, which turns "recursive type" from
-  *     a compiler stack overflow into a readable error.
+  *   - `Select(value, field)` to read case class fields, and a reflective `Match` over `TypeTest`
+  *     patterns for sealed hierarchies,
+  *   - an explicit stack of enclosing types, which turns "recursive type" from a compiler stack
+  *     overflow into a readable error.
   *
-  * Everything lives in nested `def`s so that `quotes.reflect` types (`Term`,
-  * `TypeRepr`) stay tied to one stable `Quotes` instance - the alternative is
-  * threading `(using q: Quotes)` and writing `q.reflect.Term` everywhere.
+  * Everything lives in nested `def`s so that `quotes.reflect` types (`Term`, `TypeRepr`) stay tied
+  * to one stable `Quotes` instance - the alternative is threading `(using q: Quotes)` and writing
+  * `q.reflect.Term` everywhere.
   */
 private[json] object JsonWriterMacros {
 
-  /** The field used to tag which branch of a sealed hierarchy was encoded. */
+  /**
+    * The field used to tag which branch of a sealed hierarchy was encoded.
+    */
   private val Discriminator = "type"
 
   def deriveImpl[A: Type](using Quotes): Expr[JsonWriter[A]] = {
@@ -40,7 +43,8 @@ private[json] object JsonWriterMacros {
     def append(sb: Expr[Sink], text: String): Expr[Unit] =
       '{ $sb.append(${ Expr(text) }); () }
 
-    /** Generate the code that writes `value` (a term of type `tpe`) into `sb`.
+    /**
+      * Generate the code that writes `value` (a term of type `tpe`) into `sb`.
       */
     def writeValue(
         tpe: TypeRepr,
@@ -107,7 +111,7 @@ private[json] object JsonWriterMacros {
                 ${ value.asExprOf[Option[t]] } match {
                   case Some(inner) =>
                     ${
-                      writeValue(TypeRepr.of[t], '{ inner }.asTerm, sb, stack)
+                      writeValue(TypeRepr.of[t], 'inner.asTerm, sb, stack)
                     }
                   case None => ${ append(sb, "null") }
                 }
@@ -141,7 +145,7 @@ private[json] object JsonWriterMacros {
                   if (i > 0) { $sb.append(",") }
                   val element = array(i)
                   ${
-                    writeValue(TypeRepr.of[t], '{ element }.asTerm, sb, stack)
+                    writeValue(TypeRepr.of[t], 'element.asTerm, sb, stack)
                   }
                   i += 1
                 }
@@ -159,7 +163,7 @@ private[json] object JsonWriterMacros {
                   first = false
                   val element = it.next()
                   ${
-                    writeValue(TypeRepr.of[t], '{ element }.asTerm, sb, stack)
+                    writeValue(TypeRepr.of[t], 'element.asTerm, sb, stack)
                   }
                 }
                 $sb.append("]")
@@ -188,8 +192,9 @@ private[json] object JsonWriterMacros {
       }
     }
 
-    /** `{"a":1,"b":"x"}` - the braces, field names and separators are all
-      * constants folded into the surrounding literals.
+    /**
+      * `{"a":1,"b":"x"}` - the braces, field names and separators are all constants folded into the
+      * surrounding literals.
       */
     def writeProduct(
         tpe: TypeRepr,
@@ -207,7 +212,7 @@ private[json] object JsonWriterMacros {
 
       val body = fields.zipWithIndex.map { case (field, i) =>
         val needsComma = i > 0 || tag.isDefined
-        val prefix = (if (needsComma) "," else "") + "\"" + field.name + "\":"
+        val prefix     = (if (needsComma) "," else "") + "\"" + field.name + "\":"
         '{
           ${ append(sb, prefix) }
           ${
@@ -226,8 +231,9 @@ private[json] object JsonWriterMacros {
       Expr.block(append(sb, opening) :: body, append(sb, "}"))
     }
 
-    /** `value match { case _: Dog => ...; case _: Cat => ... }`, built with the
-      * reflection API because the branches are only known at expansion time.
+    /**
+      * `value match { case _: Dog => ...; case _: Cat => ... }`, built with the reflection API
+      * because the branches are only known at expansion time.
       */
     def writeSum(
         tpe: TypeRepr,
@@ -272,8 +278,9 @@ private[json] object JsonWriterMacros {
     '{
       new JsonWriter[A] {
         def write(value: A, sb: java.lang.StringBuilder): Unit =
-          ${ writeValue(TypeRepr.of[A], '{ value }.asTerm, '{ sb }, Nil) }
+          ${ writeValue(TypeRepr.of[A], 'value.asTerm, 'sb, Nil) }
       }
     }
   }
+
 }

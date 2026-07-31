@@ -1,29 +1,30 @@
 import Dependencies._
 
-ThisBuild / scalaVersion := "3.8.4"
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / scalaVersion      := "3.8.4"
+ThisBuild / version           := "0.1.0-SNAPSHOT"
+ThisBuild / semanticdbEnabled := true
+ThisBuild / scalacOptions     := Seq(
+  "-encoding",
+  "UTF-8",
+  "-no-indent",
+  "-deprecation",
+  "-feature",
+  "-unchecked",
+  "-java-output-version:17",
+  // "-Werror",
+  // "-Wunused:all",
+  "-Wvalue-discard",
+  "-Wnonunit-statement",
+  "-Xcheck-macros",
+  "-Xmax-inlines:64"
+)
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val root = (project in file("."))
   .settings(
-    name := "Scala3-Metaprogramming",
+    name                := "Scala3-Metaprogramming",
     libraryDependencies += munit % Test
   )
-
-ThisBuild / scalacOptions ++= Seq(
-  "-no-indent",
-  // "-deprecation", // Warns about deprecated APIs
-  "-feature", // Warns about advanced language features
-  // "-unchecked",//[warn] Flag -unchecked set repeatedly
-  // "-Wunused:imports",
-  //   "-Wunused:privates",
-  //   "-Wunused:locals",
-  //   "-Wunused:explicits",
-  //   "-Wunused:implicits",
-  //   "-Wunused:params",
-  //   "-Wvalue-discard",
-  // "-language:strictEquality",
-  "-Xmax-inlines:100000",
-  "-Yexplicit-nulls"
-)
 
 libraryDependencies += "com.lihaoyi" %% "ujson" % "4.4.3"

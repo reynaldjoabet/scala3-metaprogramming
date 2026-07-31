@@ -1,11 +1,12 @@
 package example.staging
 
-/** A tiny expression language, used to show *multi-stage programming*: an
-  * interpreter that is specialised away at compile time.
+/**
+  * A tiny expression language, used to show *multi-stage programming*: an interpreter that is
+  * specialised away at compile time.
   *
-  * The naive way to evaluate `Add(Var("x"), Mul(Lit(2), Var("y")))` is to walk
-  * the tree at runtime - one megamorphic `match` and one `Map` lookup per node,
-  * every single call. Staging removes the interpreter entirely:
+  * The naive way to evaluate `Add(Var("x"), Mul(Lit(2), Var("y")))` is to walk the tree at runtime -
+  * one megamorphic `match` and one `Map` lookup per node, every single call. Staging removes the
+  * interpreter entirely:
   *
   * {{{
   * Arith.compile(Add(Var("x"), Mul(Lit(2.0), Var("x"))))
@@ -13,26 +14,28 @@ package example.staging
   * (env: Map[String, Double]) => { val x = env("x"); x + 2.0 * x }
   * }}}
   *
-  * The tree is *unlifted* into a real `Arith` value at compile time
-  * (`FromExpr`), simplified with ordinary Scala code, and then emitted as
-  * straight-line arithmetic. This is the "interpreter to compiler" step every
-  * staged query engine and regex compiler makes.
+  * The tree is *unlifted* into a real `Arith` value at compile time (`FromExpr`), simplified with
+  * ordinary Scala code, and then emitted as straight-line arithmetic. This is the "interpreter to
+  * compiler" step every staged query engine and regex compiler makes.
   *
   * @see
   *   [[ArithMacros]] for the implementation.
   */
 enum Arith {
+
   case Lit(value: Double)
   case Var(name: String)
   case Add(left: Arith, right: Arith)
   case Mul(left: Arith, right: Arith)
   case Pow(base: Arith, exponent: Int)
+
 }
 
 object Arith {
 
-  /** Algebraic simplification. Ordinary Scala - it runs *inside* the macro, on
-    * a value that only exists during compilation.
+  /**
+    * Algebraic simplification. Ordinary Scala - it runs *inside* the macro, on a value that only
+    * exists during compilation.
     */
   def fold(expr: Arith): Arith = expr match {
     case Add(l, r) =>
@@ -83,24 +86,27 @@ object Arith {
     case Pow(b, n) => s"${render(b)}^$n"
   }
 
-  /** Simplify an expression at compile time and hand back the *value*.
+  /**
+    * Simplify an expression at compile time and hand back the *value*.
     *
-    * A round trip through both directions of the lifting machinery: `FromExpr`
-    * turns the syntax tree into an `Arith`, `ToExpr` turns the simplified
-    * `Arith` back into a syntax tree.
+    * A round trip through both directions of the lifting machinery: `FromExpr` turns the syntax
+    * tree into an `Arith`, `ToExpr` turns the simplified `Arith` back into a syntax tree.
     */
   inline def optimize(inline expr: Arith): Arith =
     ${ ArithMacros.optimizeImpl('expr) }
 
-  /** Compile an expression into a specialised function: no tree walk, no
-    * repeated environment lookups, powers unrolled by binary exponentiation.
+  /**
+    * Compile an expression into a specialised function: no tree walk, no repeated environment
+    * lookups, powers unrolled by binary exponentiation.
     */
   inline def compile(inline expr: Arith): Map[String, Double] => Double =
     ${ ArithMacros.compileImpl('expr) }
 
-  /** The generated source, as a compile-time constant - useful for tests and
-    * for seeing what staging actually produced.
+  /**
+    * The generated source, as a compile-time constant - useful for tests and for seeing what
+    * staging actually produced.
     */
   inline def showCompiled(inline expr: Arith): String =
     ${ ArithMacros.showCompiledImpl('expr) }
+
 }

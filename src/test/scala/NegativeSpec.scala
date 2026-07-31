@@ -7,15 +7,14 @@ import example.staging.Arith
 import example.wiring.Wiring
 import munit.FunSuite
 
-/** The macros in this project spend most of their effort on *rejecting* code.
-  * These tests pin the rejections down: `compileErrors` compiles a snippet at
-  * compile time and hands back the diagnostics as a string, so an error message
-  * regressing is a test failure like any other.
+/**
+  * The macros in this project spend most of their effort on *rejecting* code. These tests pin the
+  * rejections down: `compileErrors` compiles a snippet at compile time and hands back the
+  * diagnostics as a string, so an error message regressing is a test failure like any other.
   *
-  * One caveat: the code under test lives inside string literals, so zinc cannot
-  * see that this file depends on the macros. Editing a macro will not
-  * invalidate these expansions - run them after a `clean` (or touch this file)
-  * when you change an error message.
+  * One caveat: the code under test lives inside string literals, so zinc cannot see that this file
+  * depends on the macros. Editing a macro will not invalidate these expansions - run them after a
+  * `clean` (or touch this file) when you change an error message.
   */
 class NegativeSpec extends FunSuite {
 
@@ -85,12 +84,15 @@ class NegativeSpec extends FunSuite {
     val errors = compileErrors("""JsonWriter.derive[wired.Tree]""")
     assert(errors.contains("is recursive"), errors)
   }
+
 }
 
 object wired {
+
   trait Connection
   final class UserRepo(val conn: Connection)
   final class UserService(val repo: UserRepo)
 
   final case class Tree(children: List[Tree])
+
 }

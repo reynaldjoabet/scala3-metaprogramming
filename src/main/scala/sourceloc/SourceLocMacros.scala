@@ -2,19 +2,19 @@ package example.sourceloc
 
 import scala.quoted.*
 
-/** Implementation of [[SourceLoc]] and [[Trace]].
+/**
+  * Implementation of [[SourceLoc]] and [[Trace]].
   *
   * Techniques on show:
-  *   - `Position.ofMacroExpansion`: where the *call site* is, as opposed to
-  *     where the macro is defined,
-  *   - `Position.sourceCode`: the literal characters the user typed, which is
-  *     strictly better than `Expr.show` (the latter prints the tree after
-  *     typing, so it is full of inferred types and desugarings),
-  *   - `Symbol.spliceOwner` and the owner chain, to name the enclosing method
-  *     or class,
-  *   - the `(using q: Quotes)(x: q.reflect.Symbol)` signature style, which is
-  *     what you need whenever a helper takes a reflection type as a parameter:
-  *     those types are path-dependent on the `Quotes` instance.
+  *   - `Position.ofMacroExpansion`: where the *call site* is, as opposed to where the macro is
+  *     defined,
+  *   - `Position.sourceCode`: the literal characters the user typed, which is strictly better than
+  *     `Expr.show` (the latter prints the tree after typing, so it is full of inferred types and
+  *     desugarings),
+  *   - `Symbol.spliceOwner` and the owner chain, to name the enclosing method or class,
+  *   - the `(using q: Quotes)(x: q.reflect.Symbol)` signature style, which is what you need
+  *     whenever a helper takes a reflection type as a parameter: those types are path-dependent on
+  *     the `Quotes` instance.
   */
 private[sourceloc] object SourceLocMacros {
 
@@ -29,9 +29,9 @@ private[sourceloc] object SourceLocMacros {
     // two instances and fails with "Found: x$1.reflect.Symbol, Required:
     // contextual$4.reflect.Symbol". `Expr` values cross that boundary freely;
     // `Symbol`, `Term` and `TypeRepr` do not.
-    val file = Expr(position.sourceFile.name)
-    val line = Expr(position.startLine + 1) // reflection lines are 0-based
-    val column = Expr(position.startColumn + 1)
+    val file      = Expr(position.sourceFile.name)
+    val line      = Expr(position.startLine + 1) // reflection lines are 0-based
+    val column    = Expr(position.startColumn + 1)
     val enclosing = Expr(enclosingName(Symbol.spliceOwner))
 
     '{ SourceLoc($file, $line, $column, $enclosing) }
@@ -55,12 +55,13 @@ private[sourceloc] object SourceLocMacros {
     import quotes.reflect.*
 
     val position = Position.ofMacroExpansion
-    val source = value.asTerm.pos.sourceCode.getOrElse(value.show)
+    val source   = value.asTerm.pos.sourceCode.getOrElse(value.show)
     s"${position.sourceFile.name}:${position.startLine + 1}: $source = "
   }
 
-  /** Walk up the owner chain to the nearest thing a human would recognise. The
-    * splice owner itself is usually a synthetic `macro` symbol.
+  /**
+    * Walk up the owner chain to the nearest thing a human would recognise. The splice owner itself
+    * is usually a synthetic `macro` symbol.
     */
   private def enclosingName(using
       q: Quotes
@@ -77,4 +78,5 @@ private[sourceloc] object SourceLocMacros {
 
     loop(symbol)
   }
+
 }

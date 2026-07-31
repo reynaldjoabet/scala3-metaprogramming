@@ -1,10 +1,12 @@
 import scala.language.strictEquality
 
-/** Currency represents one currency of the ISO_4217 currencies list
+/**
+  * Currency represents one currency of the ISO_4217 currencies list
   * @see
   *   [[https://en.wikipedia.org/wiki/ISO_4217]]
   */
 enum Currency(val numericCode: String) derives CanEqual {
+
   case AED extends Currency("784")
   case AFN extends Currency("971")
   case ALL extends Currency("008")
@@ -184,20 +186,26 @@ enum Currency(val numericCode: String) derives CanEqual {
   case ZAR extends Currency("710")
   case ZMW extends Currency("967")
   case ZWL extends Currency("932")
+
 }
+
 import java.util.UUID
 
 object UserId {
+
   opaque type Type = UUID
 
   def apply(value: UUID): Type = value
+
 }
 type UserId = UserId.Type
 
 object OrderId {
+
   opaque type Type = UUID
 
   def apply(value: UUID): Type = value
+
 }
 type OrderId = OrderId.Type
 

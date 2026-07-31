@@ -42,9 +42,9 @@ class LensSpec extends FunSuite {
   }
 
   test("lenses compose") {
-    val address = Lens.of[Person](_.address)
-    val street = Lens.of[Address](_.street)
-    val name = Lens.of[Street](_.name)
+    val address          = Lens.of[Person](_.address)
+    val street           = Lens.of[Address](_.street)
+    val name             = Lens.of[Street](_.name)
     val personStreetName = address.andThen(street).andThen(name)
 
     assertEquals(personStreetName.get(person), "Marconi")

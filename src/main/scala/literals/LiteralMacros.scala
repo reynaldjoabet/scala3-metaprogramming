@@ -2,15 +2,16 @@ package example.literals
 
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
+
 import scala.quoted.*
 
-/** Implementation of the `uuid` and `re` literals.
+/**
+  * Implementation of the `uuid` and `re` literals.
   *
-  * The interesting technique here is error *positions*. `report.error` normally
-  * takes an `Expr` and underlines the whole thing, which for a 60-character
-  * regex is close to useless. `Position(sourceFile, start, end)` lets a macro
-  * build a span by hand, so the caret can land on the single character inside
-  * the literal that the parser choked on:
+  * The interesting technique here is error *positions*. `report.error` normally takes an `Expr` and
+  * underlines the whole thing, which for a 60-character regex is close to useless.
+  * `Position(sourceFile, start, end)` lets a macro build a span by hand, so the caret can land on
+  * the single character inside the literal that the parser choked on:
   *
   * {{{
   * val bad = re"^[a-z"
@@ -53,7 +54,7 @@ private[literals] object LiteralMacros {
 
     // Emit the decoded halves, not the text: no parsing survives to runtime.
     val high = Expr(parsed.getMostSignificantBits)
-    val low = Expr(parsed.getLeastSignificantBits)
+    val low  = Expr(parsed.getLeastSignificantBits)
     '{ new java.util.UUID($high, $low) }
   }
 
@@ -80,8 +81,9 @@ private[literals] object LiteralMacros {
     '{ Pattern.compile(${ Expr(text) }).nn }
   }
 
-  /** These literals take no interpolated values: an interpolated regex cannot
-    * be checked at compile time, which is the entire point of the literal.
+  /**
+    * These literals take no interpolated values: an interpolated regex cannot be checked at compile
+    * time, which is the entire point of the literal.
     */
   private def singlePart(
       sc: Expr[StringContext],
@@ -107,11 +109,11 @@ private[literals] object LiteralMacros {
     }
   }
 
-  /** Build a one-character span `offset` characters into a string literal.
+  /**
+    * Build a one-character span `offset` characters into a string literal.
     *
-    * The literal's own position starts at the opening quote, so shift by one to
-    * land inside the text, and clamp so that a parser reporting an index past
-    * the end still produces a valid span.
+    * The literal's own position starts at the opening quote, so shift by one to land inside the
+    * text, and clamp so that a parser reporting an index past the end still produces a valid span.
     */
   private def positionInside(part: Expr[String], offset: Int)(using
       Quotes
@@ -119,10 +121,11 @@ private[literals] object LiteralMacros {
     import quotes.reflect.*
 
     val literal = part.asTerm.pos
-    val start = math.min(literal.start + 1 + math.max(offset, 0), literal.end)
+    val start   = math.min(literal.start + 1 + math.max(offset, 0), literal.end)
     Position(literal.sourceFile, start, math.min(start + 1, literal.end))
   }
 
   private def isHexDigit(c: Char): Boolean =
     (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+
 }

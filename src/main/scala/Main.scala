@@ -1,5 +1,6 @@
 import scala.compiletime.{constValue, summonInline}
 import scala.quoted.*
+
 import example.Hello.*
 
 object Main {
@@ -21,6 +22,7 @@ object Main {
   // Call site (where you use it)
   val y = 42
   debug(y + 1) // ← This is the CALL SITE
+
 }
 
 trait Eq[A] {
@@ -36,7 +38,8 @@ opaque type Nullable[+T] = T | Null
 object Nullable {
 
   extension [T](inline nullable: Nullable[T]) {
-    transparent inline def fold[A](inline ifNull: => A)(inline fn: T => A): A =
+
+    inline transparent def fold[A](inline ifNull: => A)(inline fn: T => A): A =
       ${ foldImpl('nullable, 'ifNull, 'fn) }
 
     inline def isNull: Boolean = {
@@ -60,6 +63,7 @@ object Nullable {
 
     inline def iterator: Iterator[T] =
       nullable.fold(Iterator.empty[T])(Iterator.single(_))
+
   }
 
   inline def apply[A](inline a: A | Null): Nullable[A] =
@@ -72,14 +76,16 @@ object Nullable {
     }
 
   given [A: Eq]: Eq[Nullable[A]] with {
+
     def eqv(na: Nullable[A], nb: Nullable[A]): Boolean = {
-      val a: A | Null = na
-      val b: A | Null = nb
+      val a: A | Null                = na
+      val b: A | Null                = nb
       given CanEqual[A | Null, Null] = CanEqual.derived
       if (a == null) b == null
       else if (b == null) false
       else Eq[A].eqv(a.asInstanceOf[A], b.asInstanceOf[A])
     }
+
   }
 
   def empty[A]: Nullable[A] =
@@ -95,7 +101,7 @@ object Nullable {
     val nullableUnion: Expr[T | Null] = '{ $nullable.asInstanceOf[T | Null] }
 
     '{
-      val n = $nullableUnion
+      val n                          = $nullableUnion
       given CanEqual[T | Null, Null] = CanEqual.derived
       if (n == null) $ifNull
       else {
@@ -104,6 +110,7 @@ object Nullable {
       }
     }
   }
+
 }
 
 type Elem[X] = X match {

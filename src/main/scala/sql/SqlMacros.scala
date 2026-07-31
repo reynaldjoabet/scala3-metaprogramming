@@ -2,17 +2,18 @@ package example.sql
 
 import scala.quoted.*
 
-/** Implementation of the `sql` interpolator and of [[Table]].
+/**
+  * Implementation of the `sql` interpolator and of [[Table]].
   *
   * Techniques on show:
-  *   - taking a `StringContext` apart with a quoted pattern (`'{
-  *     StringContext(${Varargs(parts)}*) }`),
-  *   - recovering the *static* type of an argument that was widened to `Any` by
-  *     the varargs signature, then `Expr.summon`ing a type class for it,
-  *   - compile-time lint over the literal parts, with the error attached to the
-  *     offending argument's position,
-  *   - constant folding: if nothing dynamic is spliced, the whole statement
-  *     collapses to one `Expr(String)` literal.
+  *   - taking a `StringContext` apart with a quoted pattern (`'{ StringContext(${Varargs(parts)}*)
+  *     }`),
+  *   - recovering the *static* type of an argument that was widened to `Any` by the varargs
+  *     signature, then `Expr.summon`ing a type class for it,
+  *   - compile-time lint over the literal parts, with the error attached to the offending
+  *     argument's position,
+  *   - constant folding: if nothing dynamic is spliced, the whole statement collapses to one
+  *     `Expr(String)` literal.
   */
 private[sql] object SqlMacros {
 
@@ -68,13 +69,13 @@ private[sql] object SqlMacros {
     // ---- pieces -----------------------------------------------------------
 
     sealed trait Piece
-    final case class Static(text: String) extends Piece
-    final case class Param(expr: Expr[SqlParam]) extends Piece
+    final case class Static(text: String)          extends Piece
+    final case class Param(expr: Expr[SqlParam])   extends Piece
     final case class Frag(expr: Expr[SqlFragment]) extends Piece
 
-    /** The varargs signature is `Any*`, so every argument arrives typed as
-      * `Any`. The *tree* still knows better, so peel the ascriptions off to get
-      * the type the user actually wrote.
+    /**
+      * The varargs signature is `Any*`, so every argument arrives typed as `Any`. The *tree* still
+      * knows better, so peel the ascriptions off to get the type the user actually wrote.
       */
     def staticType(expr: Expr[Any]): TypeRepr = {
       def strip(term: Term): TypeRepr = term match {
@@ -104,9 +105,8 @@ private[sql] object SqlMacros {
     }
 
     val interleaved: List[Piece] =
-      Static(parts.head) :: argPieces.zip(parts.tail).flatMap {
-        case (p, part) =>
-          List(p, Static(part))
+      Static(parts.head) :: argPieces.zip(parts.tail).flatMap { case (p, part) =>
+        List(p, Static(part))
       }
 
     // Merge neighbouring literals so the common case is a single constant.
@@ -142,7 +142,9 @@ private[sql] object SqlMacros {
         chunks.reduceLeft((acc, next) => '{ $acc + $next })
       }
 
-    /** Group runs of single parameters into one `List(...)` allocation. */
+    /**
+      * Group runs of single parameters into one `List(...)` allocation.
+      */
     def paramChunks(
         remaining: List[Piece],
         pending: List[Expr[SqlParam]]
@@ -178,7 +180,7 @@ private[sql] object SqlMacros {
     Expr.ofList(columnNames[T].map(Expr(_)))
 
   def insertImpl[T: Type](table: Expr[String])(using Quotes): Expr[String] = {
-    val cols = columnNames[T]
+    val cols         = columnNames[T]
     val placeholders = cols.map(_ => "?").mkString(", ")
     Expr(
       s"insert into ${table.valueOrAbort} (${cols.mkString(", ")}) values ($placeholders)"
@@ -205,4 +207,5 @@ private[sql] object SqlMacros {
     name.flatMap { c =>
       if (c.isUpper) "_" + c.toLower else c.toString
     }
+
 }

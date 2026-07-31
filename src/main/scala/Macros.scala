@@ -35,7 +35,7 @@ object Macros {
 
     s.value match {
       case Some(str) =>
-        val upper = str.toUpperCase
+        val upper  = str.toUpperCase
         val length = str.length
         println(s"Original: $str, Uppercase: $upper, Length: $length")
         '{ () }
@@ -57,12 +57,11 @@ object Macros {
 
 //You can splice expressions into quotes with $:
 
-  def addOne(x: Expr[Int])(using Quotes): Expr[Int] = {
+  def addOne(x: Expr[Int])(using Quotes): Expr[Int] =
     '{ $x + 1 }
-  }
 
   def example(using q: Quotes): Expr[Int] = {
-    val x = '{ 5 }
+    val x    = '{ 5 }
     val expr = '{ $x + 1 } // combines quoted code
     expr
   }
@@ -86,12 +85,13 @@ object Macros {
     val tpe = TypeRepr.of[T]
 
     // Get detailed type info
-    val name = tpe.show
+    val name   = tpe.show
     val isCase = tpe.typeSymbol.flags.is(Flags.Case)
     val fields = tpe.typeSymbol.caseFields.map(_.name)
 
     Expr(s"Type: $name, isCase: $isCase, fields: $fields")
   }
+
   def optimizeImpl(expr: Expr[Int])(using Quotes): Expr[Int] = {
     expr match {
       // Match literal: x + 0 → x
@@ -122,11 +122,11 @@ object Macros {
   )(using Quotes): Expr[Map[String, Any]] = {
     import quotes.reflect.*
 
-    val tpe = TypeRepr.of[T]
+    val tpe    = TypeRepr.of[T]
     val fields = tpe.typeSymbol.caseFields
 
     val pairs: List[Expr[(String, Any)]] = fields.map { field =>
-      val name = field.name
+      val name       = field.name
       val fieldValue = Select(value.asTerm, field).asExpr
       '{ (${ Expr(name) }, $fieldValue) }
     }
@@ -157,6 +157,7 @@ object Macros {
         }
     }
   }
+
   import scala.quoted.*
 
   trait Show[T] {
@@ -191,7 +192,7 @@ object Macros {
         case '[EmptyTuple] =>
           '{ Nil }
         case '[h *: tail] =>
-          val head = '{ $expr.asInstanceOf[h *: tail].head }
+          val head     = '{ $expr.asInstanceOf[h *: tail].head }
           val tailExpr = '{ $expr.asInstanceOf[h *: tail].tail }
           val tailList = rec(tailExpr, TypeRepr.of[tail])
           '{ $head :: $tailList }
@@ -217,7 +218,7 @@ object Macros {
 
     val cases = sym.children.map { child =>
       val childTpe = tpe.memberType(child)
-      val pattern = Ref(child).asExpr
+      val pattern  = Ref(child).asExpr
       CaseDef(
         Typed(Wildcard(), TypeTree.of(using childTpe.asType)),
         None,
@@ -237,7 +238,7 @@ object Macros {
     case _          => "unknown"
   }
 
-  transparent inline def parse(s: String): Any = ${ parseImpl('s) }
+  inline transparent def parse(s: String): Any = ${ parseImpl('s) }
 
   def parseImpl(s: Expr[String])(using Quotes): Expr[Any] = {
     s.value match {
@@ -283,25 +284,26 @@ object Macros {
       case '[EmptyTuple] =>
         '{ Nil }
       case '[h *: tail] =>
-        val headInstance = Expr.summon[Show[Any]].get
+        val headInstance  = Expr.summon[Show[Any]].get
         val tailInstances = summonInstances[tail]
         '{ $headInstance :: $tailInstances }
     }
   }
+
   import scala.compiletime.*
   import scala.compiletime.ops.int.*
 
 // Type-level arithmetic
   type Add[A <: Int, B <: Int] = A + B
-  type Ten = Add[3, 7] // Type is literally 10
+  type Ten                     = Add[3, 7] // Type is literally 10
 
 // Compile-time string ops
-  transparent inline def repeat(s: String, inline n: Int): String =
+  inline transparent def repeat(s: String, inline n: Int): String =
     inline if n <= 0 then ""
     else s + repeat(s, n - 1)
 
 // Constvalue - extract singleton type as value
-  transparent inline def sizeof[T] = inline erasedValue[T] match {
+  inline transparent def sizeof[T] = inline erasedValue[T] match {
     case _: Byte  => 1
     case _: Short => 2
     case _: Int   => 4
@@ -316,12 +318,15 @@ import scala.deriving.Mirror
 trait SafePrinter[A] {
   def safeToString(value: A): String
 }
+
 object SafePrinter {
 
   given safeString: SafePrinter[String] =
     str => str
+
   given safeInt: SafePrinter[Long] =
     long => long.toString
+
   given safeArray[A](using A: SafePrinter[A]): SafePrinter[Array[A]] =
     array => array.view.map(A.safeToString).mkString("Array[", ", ", "]")
 
@@ -362,6 +367,7 @@ object SafePrinter {
       name: String,
       makeFields: => Iterator[(String, SafePrinter[Any])]
   ) extends SafePrinter[A] {
+
     private lazy val fields = makeFields.toSeq
 
     override def safeToString(value: A): String =
@@ -373,15 +379,19 @@ object SafePrinter {
           }
           .mkString(", ")
       } + ")"
+
   }
 
   class EnumPrinter[A](
       select: A => Int,
       makeChildren: => Iterator[SafePrinter[A]]
   ) extends SafePrinter[A] {
+
     private lazy val children = makeChildren.toArray
 
     override def safeToString(value: A): String =
       children(select(value)).safeToString(value)
+
   }
+
 }

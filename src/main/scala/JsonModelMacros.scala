@@ -1,17 +1,17 @@
 package example
 
-import scala.quoted.*
 import scala.collection.mutable
-import ujson.{Null as JsonNull}
+import scala.quoted.*
+
+import ujson.Null as JsonNull
 
 object JsonModelMacros {
 
   inline def caseClassesFromResource(
       inline resourcePath: String,
       inline rootTypeName: String
-  ): String = {
+  ): String =
     ${ caseClassesFromResourceImpl('resourcePath, 'rootTypeName) }
-  }
 
   private def caseClassesFromResourceImpl(
       resourcePathExpr: Expr[String],
@@ -34,20 +34,21 @@ object JsonModelMacros {
       else report.errorAndAbort("Resource not found: " + resourcePath)
     }
 
-    val json = try {
-      scala.io.Source.fromInputStream(stream, "UTF-8").mkString
-    } finally {
-      stream.close()
-    }
+    val json =
+      try
+        scala.io.Source.fromInputStream(stream, "UTF-8").mkString
+      finally
+        stream.close()
 
-    val root = try {
-      ujson.read(json)
-    } catch {
-      case e: Throwable =>
-        report.errorAndAbort(
-          "Invalid JSON in " + resourcePath + ": " + e.getMessage
-        )
-    }
+    val root =
+      try
+        ujson.read(json)
+      catch {
+        case e: Throwable =>
+          report.errorAndAbort(
+            "Invalid JSON in " + resourcePath + ": " + e.getMessage
+          )
+      }
 
     val fullString = generate(rootTypeName, root)
 
@@ -57,7 +58,7 @@ object JsonModelMacros {
     if (fullString.length <= ChunkSize) {
       Expr(fullString)
     } else {
-      val chunks = fullString.grouped(ChunkSize).toList
+      val chunks                         = fullString.grouped(ChunkSize).toList
       val chunkExprs: List[Expr[String]] = chunks.map(Expr(_))
       '{ ${ Expr.ofList(chunkExprs) }.mkString }
     }
@@ -83,7 +84,7 @@ object JsonModelMacros {
 
     def safeField(s: String): String = {
       val cleaned0 = s.replaceAll("[^A-Za-z0-9_]", "_").nn
-      val cleaned = if (cleaned0.isEmpty) {
+      val cleaned  = if (cleaned0.isEmpty) {
         "field"
       } else if (cleaned0.head.isDigit) {
         "_" + cleaned0
@@ -143,4 +144,5 @@ object JsonModelMacros {
         "// Root must be a JSON object: " + rootTypeName
     }
   }
+
 }

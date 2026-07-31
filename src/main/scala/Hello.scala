@@ -4,11 +4,12 @@ import scala.quoted.Expr
 import scala.quoted.Quotes
 import scala.quoted.Type
 
-object Hello extends Greeting with App {
+object Hello extends Greeting {
+
   println(greeting)
 
   // Definition
-  inline def debug(inline expr: Any): Unit = ${ debugImpl('expr) }
+  inline def debug(inline expr: Any): Any = ${ debugImpl('expr) }
 
   private def debugImpl(expr: Expr[Any])(using Quotes): Expr[Any] =
     '{
@@ -21,7 +22,9 @@ object Hello extends Greeting with App {
 trait Greeting {
   lazy val greeting: String = "hello"
 }
+
 object Named {
+
   inline def apply[A](inline a: A): (String, A) = ${ namedImpl('a) }
 
   private def namedImpl[A: Type](
@@ -30,6 +33,7 @@ object Named {
     val codeAsString: Expr[String] = Expr(a.show)
     '{ ($codeAsString, $a) }
   }
+
 }
 
 // 1. DEFINITION (compile time of the macro library)

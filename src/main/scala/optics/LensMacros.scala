@@ -2,17 +2,18 @@ package example.optics
 
 import scala.quoted.*
 
-/** Implementation of [[LensBuilder.apply]].
+/**
+  * Implementation of [[LensBuilder.apply]].
   *
   * Techniques on show:
-  *   - peeling the wrappers (`Inlined`, `Block`/`Closure`, `Typed`) the
-  *     compiler puts around an inline lambda argument,
-  *   - walking a `Select` chain back to the lambda parameter to recover the
-  *     field path as a list of `Symbol`s,
-  *   - synthesising a nested `copy(...)` call with `Apply`/`TypeApply` instead
-  *     of quotes, because the field names are only known at expansion time,
-  *   - mixing the two levels: quotes build the lambda skeleton, reflection
-  *     builds the body, `asExprOf` stitches them together.
+  *   - peeling the wrappers (`Inlined`, `Block`/`Closure`, `Typed`) the compiler puts around an
+  *     inline lambda argument,
+  *   - walking a `Select` chain back to the lambda parameter to recover the field path as a list of
+  *     `Symbol`s,
+  *   - synthesising a nested `copy(...)` call with `Apply`/`TypeApply` instead of quotes, because
+  *     the field names are only known at expansion time,
+  *   - mixing the two levels: quotes build the lambda skeleton, reflection builds the body,
+  *     `asExprOf` stitches them together.
   */
 private[optics] object LensMacros {
 
@@ -70,16 +71,18 @@ private[optics] object LensMacros {
       fail("The path selects the whole object, so there is nothing to focus on")
     }
 
-    /** `obj.f1.f2. ... .fn` */
+    /**
+      * `obj.f1.f2. ... .fn`
+      */
     def focus(root: Term): Term =
       fields.foldLeft(root)((acc, field) => Select(acc, field))
 
-    /** `obj.copy(field = value)`, spelled out.
+    /**
+      * `obj.copy(field = value)`, spelled out.
       *
-      * `copy` has default arguments, and calling it with a subset of them from
-      * the reflection API means synthesising `copy$default$N` calls. Passing
-      * *every* field - reading the untouched ones straight back off `obj` -
-      * sidesteps that entirely, and is what Monocle does too.
+      * `copy` has default arguments, and calling it with a subset of them from the reflection API
+      * means synthesising `copy$default$N` calls. Passing *every* field - reading the untouched
+      * ones straight back off `obj` - sidesteps that entirely, and is what Monocle does too.
       */
     def copyWith(obj: Term, field: Symbol, value: Term): Term = {
       val tpe = obj.tpe.widen
@@ -111,7 +114,8 @@ private[optics] object LensMacros {
       Apply(applied, args)
     }
 
-    /** Rebuild the structure from the inside out: for `_.a.b` this produces
+    /**
+      * Rebuild the structure from the inside out: for `_.a.b` this produces
       * `s.copy(a = s.a.copy(b = value))`.
       */
     def rebuild(root: Term, remaining: List[Symbol], value: Term): Term =
@@ -123,11 +127,10 @@ private[optics] object LensMacros {
 
     '{
       new Lens[S, A](
-        (s: S) => ${ focus('{ s }.asTerm).asExprOf[A] },
-        (a: A) =>
-          (s: S) =>
-            ${ rebuild('{ s }.asTerm, fields, '{ a }.asTerm).asExprOf[S] }
+        (s: S) => ${ focus('s.asTerm).asExprOf[A] },
+        (a: A) => (s: S) => ${ rebuild('s.asTerm, fields, 'a.asTerm).asExprOf[S] }
       )
     }
   }
+
 }
