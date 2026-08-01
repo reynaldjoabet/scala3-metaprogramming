@@ -40,18 +40,21 @@ private[json] object JsonWriterMacros {
       report.errorAndAbort(msg + where, Position.ofMacroExpansion)
     }
 
-    def append(sb: Expr[Sink], text: String): Expr[Unit] =
+    def append(sink: Term, text: String): Expr[Unit] = {
+      val sb = sink.asExprOf[Sink]
       '{ $sb.append(${ Expr(text) }); () }
+    }
 
     /**
-      * Generate the code that writes `value` (a term of type `tpe`) into `sb`.
+      * Generate the code that writes `value` (a term of type `tpe`) into `sink`.
       */
     def writeValue(
         tpe: TypeRepr,
         value: Term,
-        sb: Expr[Sink],
+        sink: Term,
         stack: List[TypeRepr]
     ): Expr[Unit] = {
+      val sb      = sink.asExprOf[Sink]
       val widened = tpe.widen.dealias
 
       def is[T: Type]: Boolean = widened =:= TypeRepr.of[T]
@@ -111,9 +114,9 @@ private[json] object JsonWriterMacros {
                 ${ value.asExprOf[Option[t]] } match {
                   case Some(inner) =>
                     ${
-                      writeValue(TypeRepr.of[t], 'inner.asTerm, sb, stack)
+                      writeValue(TypeRepr.of[t], 'inner.asTerm, sink, stack)
                     }
-                  case None => ${ append(sb, "null") }
+                  case None => ${ append(sink, "null") }
                 }
               }
 
@@ -129,7 +132,7 @@ private[json] object JsonWriterMacros {
                   JsonWriter.writeString(entry._1, $sb)
                   $sb.append(":")
                   ${
-                    writeValue(TypeRepr.of[t], '{ entry._2 }.asTerm, sb, stack)
+                    writeValue(TypeRepr.of[t], '{ entry._2 }.asTerm, sink, stack)
                   }
                 }
                 $sb.append("}")
@@ -145,7 +148,7 @@ private[json] object JsonWriterMacros {
                   if (i > 0) { $sb.append(",") }
                   val element = array(i)
                   ${
-                    writeValue(TypeRepr.of[t], 'element.asTerm, sb, stack)
+                    writeValue(TypeRepr.of[t], 'element.asTerm, sink, stack)
                   }
                   i += 1
                 }
@@ -163,7 +166,7 @@ private[json] object JsonWriterMacros {
                   first = false
                   val element = it.next()
                   ${
-                    writeValue(TypeRepr.of[t], 'element.asTerm, sb, stack)
+                    writeValue(TypeRepr.of[t], 'element.asTerm, sink, stack)
                   }
                 }
                 $sb.append("]")
@@ -177,9 +180,9 @@ private[json] object JsonWriterMacros {
               // (which carries both the Case and Enum flags) be encoded on its
               // own.
               if (sym.children.nonEmpty) {
-                writeSum(widened, value, sb, stack)
+                writeSum(widened, value, sink, stack)
               } else if (sym.flags.is(Flags.Case)) {
-                writeProduct(widened, value, sb, stack, None)
+                writeProduct(widened, value, sink, stack, None)
               } else {
                 fail(
                   s"Cannot encode ${widened.show}: it is not a primitive, a collection, " +
@@ -199,7 +202,7 @@ private[json] object JsonWriterMacros {
     def writeProduct(
         tpe: TypeRepr,
         value: Term,
-        sb: Expr[Sink],
+        sink: Term,
         stack: List[TypeRepr],
         tag: Option[String]
     ): Expr[Unit] = {
@@ -214,21 +217,21 @@ private[json] object JsonWriterMacros {
         val needsComma = i > 0 || tag.isDefined
         val prefix     = (if (needsComma) "," else "") + "\"" + field.name + "\":"
         '{
-          ${ append(sb, prefix) }
+          ${ append(sink, prefix) }
           ${
             writeValue(
               tpe.memberType(field),
               // `value` is always a parameter or a local val, so repeating the
               // selection here is a field read, not a recomputation.
               Select(value, field),
-              sb,
+              sink,
               tpe :: stack
             )
           }
         }
       }
 
-      Expr.block(append(sb, opening) :: body, append(sb, "}"))
+      Expr.block(append(sink, opening) :: body, append(sink, "}"))
     }
 
     /**
@@ -238,7 +241,7 @@ private[json] object JsonWriterMacros {
     def writeSum(
         tpe: TypeRepr,
         value: Term,
-        sb: Expr[Sink],
+        sink: Term,
         stack: List[TypeRepr]
     ): Expr[Unit] = {
       if (tpe.typeArgs.nonEmpty) {
@@ -264,7 +267,7 @@ private[json] object JsonWriterMacros {
               writeProduct(
                 childTpe,
                 narrowed,
-                sb,
+                sink,
                 tpe :: stack,
                 Some(child.name)
               )
@@ -278,7 +281,13 @@ private[json] object JsonWriterMacros {
     '{
       new JsonWriter[A] {
         def write(value: A, sb: java.lang.StringBuilder): Unit =
-          ${ writeValue(TypeRepr.of[A], 'value.asTerm, 'sb, Nil) }
+          // Both arguments cross into the generators as `Term`s, not `Expr`s.
+          // `'value` and `'sb` are created *inside* this splice, so they carry
+          // its scope, while every generator above quotes with the `Quotes` of
+          // the enclosing `deriveImpl`. Handing over the bare tree and letting
+          // each generator re-wrap it (`sink.asExprOf[Sink]`) is what keeps the
+          // two scopes from meeting.
+          ${ writeValue(TypeRepr.of[A], 'value.asTerm, 'sb.asTerm, Nil) }
       }
     }
   }
