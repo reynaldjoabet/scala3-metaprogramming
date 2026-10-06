@@ -5,21 +5,30 @@ import java.util.List;
 
 public class Main {
 
-  int age = 10;
-  String name = "my name";
-  double price = 4.13;
-  float pi = 3.17f;
-
-  long distance = 90;
-  byte mybyte = 120;
-  List<Byte> myBytes = new ArrayList<Byte>();
-
-  char grade = 'B';
+  
 
   public static void main(String args[]) {
 
-    //statistically typed
-    ///dynamically typed
+    University uni1 = new University();
+
+    University uni2 = new University();
+
+    University uni3 = new University();
+
+    System.out.println(uni1.address);
+
+    University uba = new University(23, 90, "University of Bamenda", "Bamenda", "Bambili");
+
+    University buea = new University(23, 90, "University of Buea", "Buea", "Moliko");
+
+    System.out.println(uba.name);
+
+    System.out.println(buea.name);
+
+
+
+    University sl = new University("University of St Louis", "Bamenda", "Mile 3");
+
 
   }
 }

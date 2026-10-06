@@ -1,22 +1,23 @@
 import Dependencies._
 
-ThisBuild / scalaVersion      := "3.8.4"
-ThisBuild / version           := "0.1.0-SNAPSHOT"
-ThisBuild / semanticdbEnabled := true
-ThisBuild / scalacOptions     := Seq(
+ThisBuild / scalaVersion       := "3.8.4"
+ThisBuild / version            := "0.1.0-SNAPSHOT"
+ThisBuild / crossScalaVersions := Seq("3.3.8", "3.9.0")
+
+ThisBuild / scalacOptions := Seq(
   "-encoding",
   "UTF-8",
-  "-no-indent",
-  "-deprecation",
-  "-feature",
-  "-unchecked",
-  "-java-output-version:17",
-  // "-Werror",
-  // "-Wunused:all",
-  "-Wvalue-discard",
-  "-Wnonunit-statement",
-  "-Xcheck-macros",
-  "-Xmax-inlines:64"
+  "-no-indent"
+  // "-deprecation",
+  // "-feature",
+  // "-unchecked",
+  // "-java-output-version:17",
+  // //"-Werror",
+  // //"-Wvalue-discard",
+  // "-Wnonunit-statement",
+  // "-Xcheck-macros",
+  // "-Xmax-inlines:64",
+  // "-Ysafe-init"
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
