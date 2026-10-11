@@ -73,7 +73,7 @@ object JsonModelMacros {
         .nn
         .map(_.nn)
         .filter(_.nonEmpty)
-        .map(part => part.head.toUpper + part.drop(1))
+        .map(part => part.head.toUpper.toString + part.drop(1))
         .mkString
       if (p.isEmpty) {
         "Anonymous"

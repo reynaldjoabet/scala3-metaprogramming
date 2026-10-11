@@ -127,7 +127,7 @@ private[json] object JsonWriterMacros {
                 var first = true
                 while (it.hasNext) {
                   val entry = it.next()
-                  if (!first) { $sb.append(",") }
+                  if (!first) { $sb.append(","): Unit }
                   first = false
                   JsonWriter.writeString(entry._1, $sb)
                   $sb.append(":")
@@ -145,7 +145,7 @@ private[json] object JsonWriterMacros {
                 $sb.append("[")
                 var i = 0
                 while (i < array.length) {
-                  if (i > 0) { $sb.append(",") }
+                  if (i > 0) { $sb.append(","): Unit }
                   val element = array(i)
                   ${
                     writeValue(TypeRepr.of[t], 'element.asTerm, sink, stack)
@@ -162,7 +162,7 @@ private[json] object JsonWriterMacros {
                 $sb.append("[")
                 var first = true
                 while (it.hasNext) {
-                  if (!first) { $sb.append(",") }
+                  if (!first) { $sb.append(","): Unit }
                   first = false
                   val element = it.next()
                   ${
